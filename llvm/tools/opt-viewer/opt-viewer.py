@@ -312,6 +312,23 @@ def map_remarks(all_remarks):
                         pass
 
 
+def make_remark_filter(remark_types):
+    def remark_filter(remark):
+        if "all" in remark_types:
+            return True
+        if "analysis" in remark_types and isinstance(remark, optrecord.Analysis):
+            return True
+        if "passed" in remark_types and isinstance(remark, optrecord.Passed):
+            return True
+        if "missed" in remark_types and isinstance(remark, optrecord.Missed):
+            return True
+        if "failure" in remark_types and isinstance(remark, optrecord.Failure):
+            return True
+        return False
+
+    return remark_filter
+
+
 def generate_report(
     all_remarks,
     file_remarks,
@@ -322,6 +339,7 @@ def generate_report(
     max_hottest_remarks_on_index,
     num_jobs,
     should_print_progress,
+    remark_types
 ):
     try:
         os.makedirs(output_dir)
@@ -331,12 +349,13 @@ def generate_report(
         else:
             raise
 
+    remark_filter = make_remark_filter(remark_types)
+
     if should_print_progress:
         print("Rendering index page...")
+
     if should_display_hotness:
-        sorted_remarks = sorted(
-            optrecord.itervalues(all_remarks),
-            key=lambda r: (
+        sort_key_selector = lambda r: (
                 r.Hotness,
                 r.File,
                 r.Line,
@@ -344,21 +363,23 @@ def generate_report(
                 r.PassWithDiffPrefix,
                 r.yaml_tag,
                 r.Function,
-            ),
-            reverse=True,
-        )
+            )
     else:
-        sorted_remarks = sorted(
-            optrecord.itervalues(all_remarks),
-            key=lambda r: (
+        sort_key_selector = lambda r: (
                 r.File,
                 r.Line,
                 r.Column,
                 r.PassWithDiffPrefix,
                 r.yaml_tag,
                 r.Function,
-            ),
-        )
+            )
+
+    sorted_remarks = sorted(
+        optrecord.itervalues(all_remarks),
+        key=sort_key_selector,
+        reverse=True,
+    )
+
     IndexRenderer(
         output_dir, should_display_hotness, max_hottest_remarks_on_index
     ).render(sorted_remarks)
@@ -471,6 +492,7 @@ def main():
         args.max_hottest_remarks_on_index,
         args.jobs,
         print_progress,
+        args.remark_types
     )
 
 
