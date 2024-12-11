@@ -427,11 +427,18 @@ def main():
         help="Set the demangler to be used (defaults to %s)"
         % optrecord.Remark.default_demangler,
     )
-
     parser.add_argument(
         "--filter",
         default="",
         help="Only display remarks from passes matching filter expression",
+    )
+    parser.add_argument(
+        "--remark-types",
+        default=["all"],
+        help="Only display remarks of the specified types",
+        type=str,
+        nargs="+",
+        choices=["all","analysis","passed","missed","failure"],
     )
 
     # Do not make this a global variable.  Values needed to be propagated through
